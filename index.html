@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ee0979" />
+    <link rel="manifest" href="manifest.json" />
+    <title>eKYC PWA</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bs-primary: #ee0979;
+      }
+      .btn-outline-primary {
+        color: #ee0979;
+        border-color: #ee0979;
+      }
+      .btn-outline-primary:hover,
+      .btn-check:checked + .btn-outline-primary {
+        background-color: #ee0979;
+        color: #fff;
+        border-color: #ee0979;
+      }
+      .btn-primary,
+      .btn-success {
+        background-color: #ee0979;
+        border-color: #ee0979;
+      }
+      .btn-primary:hover,
+      .btn-success:hover {
+        background-color: #d2066a;
+        border-color: #d2066a;
+      }
+      .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+      }
+      .btn-check:checked + .btn-outline-secondary {
+        background-color: #6c757d;
+        color: #fff;
+        border-color: #6c757d;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <div class="card shadow-sm mx-auto" style="max-width: 500px">
+        <div class="card-body">
+          <h3 class="text-center mb-4" style="color: #ee0979">
+            eKYC Verification
+          </h3>
+
+          <div
+            class="btn-group w-100 mb-4"
+            role="group"
+            aria-label="eKYC Type Switch"
+          >
+            <input
+              type="radio"
+              class="btn-check"
+              name="ekycType"
+              id="btn-mykad"
+              autocomplete="off"
+              onchange="showForm('mykad')"
+              checked
+            />
+            <label class="btn btn-outline-primary" for="btn-mykad">MyKad</label>
+
+            <input
+              type="radio"
+              class="btn-check"
+              name="ekycType"
+              id="btn-passport"
+              autocomplete="off"
+              onchange="showForm('passport')"
+            />
+            <label class="btn btn-outline-primary" for="btn-passport"
+              >Passport</label
+            >
+          </div>
+
+          <form id="mykad-form" onsubmit="submitMyKad(event)">
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="mykad-name"
+                placeholder="Name"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="mykad-id"
+                placeholder="ID Number"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="mykad-ref"
+                placeholder="Ref ID"
+                required
+              />
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="mykad-ocr" />
+              <label class="form-check-label" for="mykad-ocr"
+                >Use OCR For Data</label
+              >
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit</button>
+          </form>
+
+          <form
+            id="passport-form"
+            class="d-none"
+            onsubmit="submitPassport(event)"
+          >
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="passport-name"
+                placeholder="Name"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="passport-id"
+                placeholder="Passport Number"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="passport-country"
+                placeholder="Doc Issue Country (e.g. MYS)"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="passport-ref"
+                placeholder="Ref ID"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showForm(type) {
+        document.getElementById("mykad-form").classList.add("d-none");
+        document.getElementById("passport-form").classList.add("d-none");
+        if (type === "mykad")
+          document.getElementById("mykad-form").classList.remove("d-none");
+        if (type === "passport")
+          document.getElementById("passport-form").classList.remove("d-none");
+      }
+
+      async function submitMyKad(e) {
+        e.preventDefault();
+        const useOCR = document.getElementById("mykad-ocr").checked;
+        const payload = {
+          RefID: document.getElementById("mykad-ref").value,
+          UseOCRForData: useOCR,
+        };
+        if (!useOCR) {
+          payload.Name = document.getElementById("mykad-name").value;
+          payload.IDNumber = document.getElementById("mykad-id").value;
+        }
+        const res = await fetch(
+          "https://dev.kenal.io/api/v2/ekyc/mykad/start",
+          {
+            method: "POST",
+            headers: {
+              "x-api-key": "add751a0-c783-4a7e-96da-2d480ee5d141",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        const result = await res.json();
+        if (result?.data?.fullURL) {
+          window.location.href = result.data.fullURL;
+        } else {
+          alert("Error: " + (result?.message || "Unknown error"));
+        }
+      }
+
+      async function submitPassport(e) {
+        e.preventDefault();
+        const payload = {
+          Name: document.getElementById("passport-name").value,
+          IDNumber: document.getElementById("passport-id").value,
+          DocIssueCountry: document.getElementById("passport-country").value,
+          RefID: document.getElementById("passport-ref").value,
+        };
+        const res = await fetch(
+          "https://dev.kenal.io/api/v2/ekyc/passport/start",
+          {
+            method: "POST",
+            headers: {
+              "x-api-key": "add751a0-c783-4a7e-96da-2d480ee5d141",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        const result = await res.json();
+        if (result?.data?.fullURL) {
+          window.location.href = result.data.fullURL;
+        } else {
+          alert("Error: " + (result?.message || "Unknown error"));
+        }
+      }
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("service-worker.js");
+      }
+    </script>
+  </body>
+</html>
